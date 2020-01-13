@@ -92,6 +92,30 @@ resource "aws_iam_role" "nodes" {
 EOF
 }
 
+
+resource "aws_iam_policy" "asg_policy" {
+  name        = "ASG-Policy-For-Worker"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:DescribeAutoScalingGroups",
+        "autoscaling:DescribeAutoScalingInstances",
+        "autoscaling:SetDesiredCapacity",
+        "autoscaling:TerminateInstanceInAutoScalingGroup",
+        "autoscaling:DescribeTags"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
 resource "aws_iam_role_policy_attachment" "nodes-AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.nodes.name
@@ -104,6 +128,11 @@ resource "aws_iam_role_policy_attachment" "nodes-AmazonEKS_CNI_Policy" {
 
 resource "aws_iam_role_policy_attachment" "nodes-AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = aws_iam_role.nodes.name
+}
+
+resource "aws_iam_role_policy_attachment" "nodes-ASG-Policy-For-Worker" {
+  policy_arn = aws_iam_role.asg_policy.arn
   role       = aws_iam_role.nodes.name
 }
 
