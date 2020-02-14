@@ -22,12 +22,12 @@ EOF
 
 resource "aws_iam_role_policy_attachment" "cluster-AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role = aws_iam_role.cluster.name
+  role       = aws_iam_role.cluster.name
 }
 
 resource "aws_iam_role_policy_attachment" "cluster-AmazonEKSServicePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-  role = aws_iam_role.cluster.name
+  role       = aws_iam_role.cluster.name
 }
 
 ##########################
@@ -35,14 +35,14 @@ resource "aws_iam_role_policy_attachment" "cluster-AmazonEKSServicePolicy" {
 ##########################
 
 resource "aws_security_group" "cluster" {
-  name = "${var.cluster-name}-cluster"
+  name        = "${var.cluster-name}-cluster"
   description = "Cluster communication with worker nodes"
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -56,12 +56,12 @@ resource "aws_security_group" "cluster" {
 ######################
 
 resource "aws_eks_cluster" "cluster" {
-  name = var.cluster-name
+  name     = var.cluster-name
   role_arn = aws_iam_role.cluster.arn
 
   vpc_config {
     security_group_ids = [aws_security_group.cluster.id]
-    subnet_ids = var.subnet_ids
+    subnet_ids         = var.subnet_ids
   }
 
   depends_on = [
@@ -75,7 +75,7 @@ resource "aws_eks_cluster" "cluster" {
 #############
 
 resource "aws_iam_role" "nodes" {
-  name = "${var.cluster-name}-nodes"
+  name               = "${var.cluster-name}-nodes"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -195,12 +195,12 @@ USERDATA
 
 resource "aws_launch_configuration" "nodes" {
   associate_public_ip_address = true
-  iam_instance_profile = aws_iam_instance_profile.nodes.name
-  image_id = data.aws_ami.eks-worker.id
-  instance_type = var.node-instance-type
-  name_prefix = var.cluster-name
-  security_groups = [aws_security_group.nodes.id]
-  user_data_base64 = base64encode(local.nodes-userdata)
+  iam_instance_profile        = aws_iam_instance_profile.nodes.name
+  image_id                    = data.aws_ami.eks-worker.id
+  instance_type               = var.node-instance-type
+  name_prefix                 = var.cluster-name
+  security_groups             = [aws_security_group.nodes.id]
+  user_data_base64            = base64encode(local.nodes-userdata)
 
   lifecycle {
     create_before_destroy = true
@@ -208,22 +208,22 @@ resource "aws_launch_configuration" "nodes" {
 }
 
 resource "aws_autoscaling_group" "nodes" {
-  desired_capacity = var.asg-desired-capacity
+  desired_capacity     = var.asg-desired-capacity
   launch_configuration = aws_launch_configuration.nodes.id
-  max_size = var.asg-max-size
-  min_size = var.asg-min-size
-  name = "${var.cluster-name}-nodes"
-  vpc_zone_identifier = var.subnet_ids
+  max_size             = var.asg-max-size
+  min_size             = var.asg-min-size
+  name                 = "${var.cluster-name}-nodes"
+  vpc_zone_identifier  = var.subnet_ids
 
   tag {
-    key = "Name"
-    value = "${var.cluster-name}-nodes"
+    key                 = "Name"
+    value               = "${var.cluster-name}-nodes"
     propagate_at_launch = true
   }
 
   tag {
-    key = "kubernetes.io/cluster/${var.cluster-name}"
-    value = "owned"
+    key                 = "kubernetes.io/cluster/${var.cluster-name}"
+    value               = "owned"
     propagate_at_launch = true
   }
 }
